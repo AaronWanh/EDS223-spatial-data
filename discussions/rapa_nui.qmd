@@ -1,0 +1,81 @@
+```{r}
+library(here)
+library(tidyverse)
+library(sf)
+library(stars)
+library(tmap)
+```
+
+```{r}
+ei_points <- st_read(here("discussions", "data", "easter_island", "ei_points.gpkg")) |> 
+  filter(type == "volcano")
+ei_elev <- read_stars(here("discussions","data", "easter_island", "ei_elev.tif"))
+ei_borders <- st_read(here("discussions","data", "easter_island", "ei_border.gpkg"))
+ei_roads <- st_read(here("discussions","data", "easter_island", "ei_roads.gpkg"))
+```
+
+```{r}
+tm_shape(ei_borders) +
+    tm_borders() +
+
+# Set general map layout options
+    tm_layout(main.title = "Easter Island")
+```
+
+```{r}
+ei_map <- tm_shape(ei_elev) +
+    tm_graticules() +
+    tm_raster(
+        col.scale = tm_scale_continuous(values = "-rd_yl_gn"),
+        col.legend = tm_legend(title = "Elevation (m asl)"),
+    ) + 
+    tm_shape(ei_borders) +
+        tm_borders() +
+    tm_shape(ei_roads) + 
+        tm_lines() +
+    tm_shape(ei_points) + 
+        tm_symbols(
+            shape = 24,
+            size = "elevation",
+            size.legend = tm_legend(title = "Volcanoes (m asl)")
+        ) + 
+    tm_compass(position = c("right", "top")) +
+    tm_scalebar() +
+    tm_title("Easter Island")
+
+    tmap_mode("view")
+
+ei_map
+```
+
+``` {r}
+library(ggplot2)
+
+ggplot() +
+    # first add Easter Island borders
+    geom_sf(data = ei_borders) +
+    # add ellevation raster
+    geom_stars(data = ei_elev) +
+    scale_fill_distiller(
+        name = "Elevation (m asl)",
+        palette = "RdY1Gn",
+        na.value = "lightblue"
+    ) + 
+    geom_sf(data = ei_roads) +
+    # add road vector 
+    geom_point(data = volcanoes_point, 
+            aes(x = lon, y = lat, size = elevation),
+            shape = 17, 
+            color = #22577a
+    
+    ) + 
+        scale_size_continuous(name = "Volcanoes (m asl)") +
+        ggspatial::annotation_north_arrow(location = "br",
+                                          which_north = "true") +
+        ggspatial::annotation_scale(location = "bl",
+                                    width_hint = 0.5) +
+        labs(title = "Easter Island") +
+        theme_minimal()
+    
+    # add volcano vector 
+```   
